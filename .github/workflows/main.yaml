@@ -46,7 +46,8 @@ jobs:
       
       - name: Migrate the Database
         run: |
-          php artisan migrate
+          php artisan config:clear
+          php artisan migrate:install
       
       - name: Run Unit Testing
         run: |
