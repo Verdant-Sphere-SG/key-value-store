@@ -1,0 +1,64 @@
+name: PR WorkFlow
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  app-tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_DATABASE: test
+          MYSQL_USERNAME: root
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - name: Check Docker processes
+        run: |
+          docker ps
+
+      - name: Check Network Status
+        run: |
+          netstat -an | grep 3306
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          composer install
+
+      - name: Copy .env
+        run: |
+          cp .env.ci .env          
+          cp .env.ci .env.testing
+
+      - name: Check env files
+        run: |
+          ls -ltr .env          
+          ls -ltr .env.testing
+
+      - name: Generate key
+        run: |
+          php artisan key:generate
+
+      - name: Migrate the Database
+        run: |
+          php artisan migrate
+
+      - name: Execute unit tests
+        run: |
+          php artisan test
