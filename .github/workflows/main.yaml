@@ -1,5 +1,6 @@
 name: Main Workflow
 
+# trigger
 on:
   pull_request:
     branches:
@@ -7,8 +8,8 @@ on:
       - dev
 
 jobs:
-  test:
-    name: Test the Application
+  build:
+    name: Build Laravel App
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -16,34 +17,37 @@ jobs:
         ports:
           - 3306:3306
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: false
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_USERNAME: root
-          MYSQL_PASSWORD: password
-          MYSQL_DATABASE: test
+            MYSQL_ALLOW_EMPTY_PASSWORD: false
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_USERNAME: root
+            MYSQL_DATABASE: test
+
     steps:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Composer Install
+      - name: Install dependencies
         run: |
           composer install
 
       - name: Create .env
         run: |
           cp .env.ci .env
-
+          cp .env.ci .env.testing
+      
       - name: Generate the key
         run: |
           php artisan key:generate
-
+      
       - name: Migrate the Database
         run: |
           php artisan migrate
-
+      
       - name: Run Unit Testing
         run: |
           php artisan test
